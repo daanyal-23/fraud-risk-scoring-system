@@ -1,0 +1,31 @@
+# Private Client Data & Inputs
+data/
+*.csv
+ops-policy.pdf
+email-thread.txt
+email-thread.txt.txt
+
+# Generated Submissions & Client-derived Model Artifacts
+predictions.csv
+predictions_*.csv
+model.json
+partner_stats.json
+partner_lookup.json
+submission-form.md
+*.zip
+
+# Python & Environment Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+env/
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,10 @@
+# Serving dependencies
+flask>=3.0.0
+numpy>=1.26.0
+pandas>=2.0.0
+
+# Training & validation dependencies
+scikit-learn>=1.3.0
+
+# Testing
+pytest>=8.0.0

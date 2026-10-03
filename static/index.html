@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kestrel Claim Risk Review</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem;color:#1a1a1a;background:#fafafa}
+.card{background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+label{display:block;margin:.6rem 0 .2rem;font-size:.9rem;color:#444;font-weight:500}
+input,select{padding:.5rem;width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:6px;font-size:0.95rem}
+input:focus,select:focus{outline:none;border-color:#1f4e79}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+button{margin-top:1.2rem;padding:.65rem 1.4rem;border:0;border-radius:6px;background:#1f4e79;color:#fff;font-size:1rem;cursor:pointer;font-weight:500}
+button:hover{background:#163857}
+#out{margin-top:1.5rem;padding:1.2rem;border-radius:8px;border:1px solid #ccc;display:none}
+.flag{background:#fdecea;border-color:#e57373}
+.ok{background:#edf7ed;border-color:#81c784}
+.err{background:#fff3cd;border-color:#ffeeba}
+small{color:#666}li{margin:.3rem 0}
+h1{margin-top:0;font-size:1.5rem;color:#111}
+h2{margin-top:0;font-size:1.2rem}
+</style></head><body>
+<div class="card">
+<h1>Kestrel Claim Risk Review</h1>
+<p><small>Prioritises warranty claims for the 40-a-month review queue. A high score means "inspect first", not proof of fraud.</small></p>
+<div class="row">
+<div><label for="partner_id">Partner ID</label><input id="partner_id" value="PRT_DEMO" placeholder="e.g. PRT_DEMO"></div>
+<div><label for="claim_amount_inr">Claim Amount (INR)</label><input id="claim_amount_inr" type="number" step="any" min="0" value="1500"></div>
+<div><label for="days_since_purchase">Days Since Purchase</label><input id="days_since_purchase" type="number" min="0" value="120"></div>
+<div><label for="customer_prior_claims">Customer Prior Claims</label><input id="customer_prior_claims" type="number" min="0" value="0"></div>
+<div><label for="partner_inspected">Partner Inspected?</label><select id="partner_inspected"><option value="N">N</option><option value="Y">Y</option></select></div>
+<div><label for="photo_attached">Photo Attached?</label><select id="photo_attached"><option value="Y">Y</option><option value="N">N</option></select></div>
+</div>
+<button id="check_btn" onclick="go()">Check Claim Risk</button>
+<div id="out"></div>
+</div>
+<script>
+async function go(){
+  const ids=["partner_id","claim_amount_inr","days_since_purchase","customer_prior_claims","partner_inspected","photo_attached"];
+  const rec={}; ids.forEach(i=>rec[i]=document.getElementById(i).value);
+  const o=document.getElementById("out"); o.style.display="block";
+  try{
+    const r=await fetch("/predict",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)});
+    const j=await r.json();
+    if(!r.ok){
+      o.className="err";
+      o.textContent="Validation Error ("+r.status+"): "+(j.error||"Invalid input");
+      return;
+    }
+    o.className=j.flag_for_review?"flag":"ok";
+    const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+    o.innerHTML="<h2>"+(j.flag_for_review?"Flagged for Investigation Queue":"Standard Processing (No Escalation)")+"</h2>"+
+      "<p>Risk score: <b>"+(j.score*100).toFixed(1)+"%</b> (review threshold "+(j.threshold*100).toFixed(0)+"%)</p><b>Contributing Factors:</b><ul>"+
+      (j.reasons||[]).map(x=>"<li>"+esc(x.factor)+" <small>("+esc(x.direction)+")</small></li>").join("")+"</ul>"+
+      (j.notes||[]).map(n=>"<p><small>Note: "+esc(n)+"</small></p>").join("")+
+      "<p><small><b>Disclaimer:</b> "+esc(j.disclaimer)+"</small></p>";
+  }catch(e){
+    o.className="err";
+    o.textContent="Service not reachable. Please verify app.py is running.";
+  }
+}
+</script></body></html>
